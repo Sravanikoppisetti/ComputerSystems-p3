@@ -1,17 +1,10 @@
-'''
-    Disclaimer
-    tiny httpd is a web server program for instructional purposes only
-    It is not intended to be used as a production quality web server
-    as it does not fully in compliance with the 
-    HTTP RFC https://tools.ietf.org/html/rfc2616
-
-'''
-
-from msilib.schema import FileSFPCatalog
+from asyncio.subprocess import STDOUT
 import subprocess
 import socket
 import os
 import mimetypes
+import multiprocessing 
+
 class HTTPServer:
     def __init__(self,host,port):
         self.host = host
@@ -128,6 +121,13 @@ class HTTPServer:
             print("Waiting for a connection")
             c, client_address = sock.accept()
             #print("connection from",client_address)
+            process=multiprocessing.Process(target=self.response, args=(c,))
+            process.start()
+            process.join()
+
+
+
+    def response(self,c):
             data=c.recv(1024)
             x=data.decode()
             print("initialdata",x)
@@ -136,7 +136,6 @@ class HTTPServer:
 
             if  (given_url==""):
                 respns=self.gvn_url_isempty(c)
-                sock.close()
                 c.close()
 
             path_fileslist=self.getpath(given_url)
@@ -144,7 +143,6 @@ class HTTPServer:
 
             if (len(path_fileslist)<1) or path_fileslist[0]=="404":
                 c.send("HTTP/1.1 404 not found".encode())
-                sock.close()
                 c.close()
 
             path=path_fileslist[0]
